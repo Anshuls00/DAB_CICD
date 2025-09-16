@@ -1,0 +1,25 @@
+bundle:
+  name: dab-cicd-bundle
+
+include:
+  - "*.ipynb"        # include all notebooks at repo root
+  # - notebooks/*.ipynb  # (optional) in case you later organize under /notebooks
+
+sync:
+  exclude:
+    - .gitignore
+    - README.md
+    - .github/**       # exclude GitHub workflows
+
+targets:
+  dev:
+    mode: development
+    workspace:
+      host: https://adb-831014617002513.13.azuredatabricks.net
+      file_path: /Shared/DAB_CICD   # target folder inside Databricks workspace
+
+  uat:
+    mode: production
+    workspace:
+      host: https://adb-1375573820735468.8.azuredatabricks.net
+      file_path: /Shared/DAB_CICD
