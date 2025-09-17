@@ -10,11 +10,11 @@ sync:
     - .github/**
 
 targets:
-  dev:
-    mode: development
-    workspace:
-      host: https://adb-831014617002513.13.azuredatabricks.net
-      file_path: /
+  # dev:
+  #   mode: development
+  #   workspace:
+  #     host: https://adb-831014617002513.13.azuredatabricks.net
+  #     file_path: /
   uat:
     mode: production
     workspace:
