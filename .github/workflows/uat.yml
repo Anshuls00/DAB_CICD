@@ -53,20 +53,51 @@ jobs:
         pip install wheel
         echo "$HOME/.databricks/bin" >> $GITHUB_PATH
 
-    - name: Debug secrets
+    - name: Debug secrets (improved)
       run: |
-        echo "Dev Host: ${{ secrets.DATABRICKS_DEV_HOST }}"
+        echo "Dev Host exists: ${{ secrets.DATABRICKS_DEV_HOST != '' }}"
+        echo "Dev Token exists: ${{ secrets.DATABRICKS_DEV_TOKEN != '' }}"
+        echo "Dev Host length: ${#DATABRICKS_DEV_HOST}"
         echo "Dev Token length: ${#DATABRICKS_DEV_TOKEN}"
+        # Check for common issues
+        if [[ "$DATABRICKS_DEV_HOST" == *$'\n'* ]]; then
+          echo "WARNING: Host contains newlines!"
+        fi
+        if [[ "$DATABRICKS_DEV_TOKEN" == *$'\n'* ]]; then
+          echo "WARNING: Token contains newlines!"
+        fi
       env:
+        DATABRICKS_DEV_HOST: ${{ secrets.DATABRICKS_DEV_HOST }}
         DATABRICKS_DEV_TOKEN: ${{ secrets.DATABRICKS_DEV_TOKEN }}
 
-    - name: Configure Databricks CLI for Dev
+    - name: Clean and configure Databricks CLI for Dev
       run: |
-        databricks configure --host ${{ secrets.DATABRICKS_DEV_HOST }} --token ${{ secrets.DATABRICKS_DEV_TOKEN }}
+        # Clean any existing config
+        rm -rf ~/.databrickscfg
+        
+        # Remove any trailing whitespace/newlines from secrets
+        HOST=$(echo "${{ secrets.DATABRICKS_DEV_HOST }}" | tr -d '\n\r' | xargs)
+        TOKEN=$(echo "${{ secrets.DATABRICKS_DEV_TOKEN }}" | tr -d '\n\r' | xargs)
+        
+        echo "Cleaned Host: $HOST"
+        echo "Token length after cleaning: ${#TOKEN}"
+        
+        # Configure using environment variables (more reliable)
+        export DATABRICKS_HOST="$HOST"
+        export DATABRICKS_TOKEN="$TOKEN"
+        
+        # Verify connection
+        databricks current-user me
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEV_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEV_TOKEN }}
 
     - name: Validate bundle configuration
       run: |
         databricks bundle validate --target dev
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEV_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEV_TOKEN }}
 
   # Job 3: Deploy to UAT
   deploy-uat:
@@ -100,22 +131,47 @@ jobs:
 
     - name: Configure Databricks CLI for UAT
       run: |
-        databricks configure --host ${{ secrets.DATABRICKS_UAT_HOST }} --token ${{ secrets.DATABRICKS_UAT_TOKEN }}
+        # Clean any existing config
+        rm -rf ~/.databrickscfg
+        
+        # Remove any trailing whitespace/newlines from secrets
+        HOST=$(echo "${{ secrets.DATABRICKS_UAT_HOST }}" | tr -d '\n\r' | xargs)
+        TOKEN=$(echo "${{ secrets.DATABRICKS_UAT_TOKEN }}" | tr -d '\n\r' | xargs)
+        
+        echo "UAT Host: $HOST"
+        echo "UAT Token length: ${#TOKEN}"
+        
+        # Verify connection first
+        export DATABRICKS_HOST="$HOST"
+        export DATABRICKS_TOKEN="$TOKEN"
+        databricks current-user me
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_UAT_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_UAT_TOKEN }}
 
     - name: Pre-deployment validation
       run: |
         echo "Validating bundle for UAT deployment..."
         databricks bundle validate --target uat
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_UAT_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_UAT_TOKEN }}
 
     - name: Deploy to UAT
       run: |
         echo "Deploying to UAT environment..."
         databricks bundle deploy --target uat
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_UAT_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_UAT_TOKEN }}
 
     - name: Post-deployment verification
       run: |
         echo "Verifying deployment..."
         databricks bundle status --target uat
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_UAT_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_UAT_TOKEN }}
 
     - name: Upload UAT deployment artifacts
       uses: actions/upload-artifact@v4
