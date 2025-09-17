@@ -36,7 +36,7 @@ jobs:
         env:
           DATABRICKS_HOST: https://adb-1375573820735468.8.azuredatabricks.net
           DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_UAT_TOKEN }}
-        run: databricks bundle validate --target uat --config-file databricks.yml
+        run: databricks bundle validate -t uat
 
       - name: Deploy bundle (UAT)
         env:
