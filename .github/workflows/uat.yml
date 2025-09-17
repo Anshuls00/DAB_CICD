@@ -24,16 +24,13 @@ jobs:
         curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
         echo "$HOME/.databricks/bin" >> $GITHUB_PATH
 
-    - name: Debug check (optional)
-      run: ls -la
-
-    - name: Configure Databricks CLI for Dev
+    - name: Test Authentication (Dev)
       env:
         DATABRICKS_HOST: https://adb-831014617002513.13.azuredatabricks.net
         DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEV_TOKEN }}
       run: |
         echo "Using environment variables for authentication"
-        databricks workspace ls /
+        databricks workspace list /
 
     - name: Validate bundle
       env:
@@ -59,13 +56,13 @@ jobs:
         curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
         echo "$HOME/.databricks/bin" >> $GITHUB_PATH
 
-    - name: Configure Databricks CLI for UAT
+    - name: Test Authentication (UAT)
       env:
         DATABRICKS_HOST: https://adb-1375573820735468.8.azuredatabricks.net
         DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_UAT_TOKEN }}
       run: |
         echo "Using environment variables for authentication"
-        databricks workspace ls /
+        databricks workspace list /
 
     - name: Deploy to UAT
       env:
