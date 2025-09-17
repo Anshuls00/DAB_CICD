@@ -52,133 +52,11 @@ jobs:
         pip install wheel
         echo "$HOME/.databricks/bin" >> $GITHUB_PATH
 
-    - name: Debug secrets (improved)
+    - name: Debug secrets
       run: |
         echo "Dev Token exists: ${{ secrets.DATABRICKS_DEV_TOKEN != '' }}"
-        echo "UAT Token exists: ${{ secrets.DATABRICKS_UAT_TOKEN != '' }}"
         echo "Dev Token length: ${#DATABRICKS_DEV_TOKEN}"
-        # Check for common issues
-        if [[ "$DATABRICKS_DEV_TOKEN" == *
-
-    - name: Configure Databricks CLI for Dev
-      run: |
-        # Clean any existing config
-        rm -rf ~/.databrickscfg
-        
-        # Remove any trailing whitespace/newlines from secrets
-        TOKEN=$(echo "${{ secrets.DATABRICKS_DEV_TOKEN }}" | tr -d '\n\r' | xargs)
-        
-        echo "Dev Host: https://adb-831014617002513.13.azuredatabricks.net"
-        echo "Token length after cleaning: ${#TOKEN}"
-        
-        # Create databricks config file directly
-        mkdir -p ~/.databricks
-        cat > ~/.databrickscfg << EOF
-        [DEFAULT]
-        host = https://adb-831014617002513.13.azuredatabricks.net
-        token = $TOKEN
-        EOF
-        
-        # Verify connection
-        databricks current-user me
-
-    - name: Validate bundle configuration
-      run: |
-        databricks bundle validate --target dev
-
-  # Job 3: Deploy to UAT
-  deploy-uat:
-    needs: validate
-    runs-on: ubuntu-latest
-    name: Deploy to UAT
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-
-    - name: Install Databricks CLI and Bundle
-      run: |
-        curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
-        pip install wheel
-        echo "$HOME/.databricks/bin" >> $GITHUB_PATH
-
-    - name: Download dev artifacts (if available)
-      uses: actions/download-artifact@v4
-      with:
-        name: dev-deployment-artifacts
-        path: .
-      continue-on-error: true
-
-    - name: Configure Databricks CLI for UAT
-      run: |
-        # Clean any existing config
-        rm -rf ~/.databrickscfg
-        
-        # Remove any trailing whitespace/newlines from secrets
-        TOKEN=$(echo "${{ secrets.DATABRICKS_UAT_TOKEN }}" | tr -d '\n\r' | xargs)
-        
-        echo "UAT Host: https://adb-1375573820735468.8.azuredatabricks.net"
-        echo "UAT Token length: ${#TOKEN}"
-        
-        # Create databricks config file directly
-        mkdir -p ~/.databricks
-        cat > ~/.databrickscfg << EOF
-        [DEFAULT]
-        host = https://adb-1375573820735468.8.azuredatabricks.net
-        token = $TOKEN
-        EOF
-        
-        # Verify connection first
-        databricks current-user me
-
-    - name: Pre-deployment validation
-      run: |
-        echo "Validating bundle for UAT deployment..."
-        databricks bundle validate --target uat
-
-    - name: Deploy to UAT
-      run: |
-        echo "Deploying to UAT environment..."
-        databricks bundle deploy --target uat
-
-    - name: Post-deployment verification
-      run: |
-        echo "Verifying deployment..."
-        databricks bundle status --target uat
-
-    - name: Upload UAT deployment artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: uat-deployment-artifacts
-        path: |
-          .databricks/
-          databricks.yml
-        retention-days: 30
-
-    - name: Deployment Summary
-      run: |
-        echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
-        echo "- **Target Environment**: ${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Databricks Workspace**: https://adb-1375573820735468.8.azuredatabricks.net" >> $GITHUB_STEP_SUMMARY
-        echo "- **Deployment Path**: /Shared/DAB_CICD" >> $GITHUB_STEP_SUMMARY
-        echo "- **Commit SHA**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Triggered by**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
-
-  # Job 4: Cleanup (optional - runs on failure)
-  cleanup:
-    needs: [deploy-uat]
-    if: failure()
-    runs-on: ubuntu-latest
-    name: Cleanup on Failure
-    steps:
-    - name: Cleanup artifacts
-      run: |
-        echo "Cleaning up failed deployment artifacts..."
-        # Add any cleanup logic if needed\n'* ]]; then
+        if [[ "$DATABRICKS_DEV_TOKEN" == *$'\n'* ]]; then
           echo "WARNING: Dev Token contains newlines!"
         fi
       env:
@@ -189,20 +67,17 @@ jobs:
         # Clean any existing config
         rm -rf ~/.databrickscfg
         
-        # Remove any trailing whitespace/newlines from secrets
-        HOST=$(echo "${{ secrets.DATABRICKS_DEV_HOST }}" | tr -d '\n\r' | xargs)
+        # Clean token
         TOKEN=$(echo "${{ secrets.DATABRICKS_DEV_TOKEN }}" | tr -d '\n\r' | xargs)
-        
-        echo "Cleaned Host: $HOST"
         echo "Token length after cleaning: ${#TOKEN}"
         
-        # Create databricks config file directly
+        # Create databricks config file
         mkdir -p ~/.databricks
         cat > ~/.databrickscfg << EOF
-        [DEFAULT]
-        host = https://adb-831014617002513.13.azuredatabricks.net
-        token = $TOKEN
-        EOF
+[DEFAULT]
+host = https://adb-831014617002513.13.azuredatabricks.net
+token = $TOKEN
+EOF
         
         # Verify connection
         databricks current-user me
@@ -231,33 +106,24 @@ jobs:
         pip install wheel
         echo "$HOME/.databricks/bin" >> $GITHUB_PATH
 
-    - name: Download dev artifacts (if available)
-      uses: actions/download-artifact@v4
-      with:
-        name: dev-deployment-artifacts
-        path: .
-      continue-on-error: true
-
     - name: Configure Databricks CLI for UAT
       run: |
         # Clean any existing config
         rm -rf ~/.databrickscfg
         
-        # Remove any trailing whitespace/newlines from secrets
+        # Clean token
         TOKEN=$(echo "${{ secrets.DATABRICKS_UAT_TOKEN }}" | tr -d '\n\r' | xargs)
-        
-        echo "UAT Host: https://adb-1375573820735468.8.azuredatabricks.net"
         echo "UAT Token length: ${#TOKEN}"
         
-        # Create databricks config file directly
+        # Create databricks config file
         mkdir -p ~/.databricks
         cat > ~/.databrickscfg << EOF
-        [DEFAULT]
-        host = https://adb-1375573820735468.8.azuredatabricks.net
-        token = $TOKEN
-        EOF
+[DEFAULT]
+host = https://adb-1375573820735468.8.azuredatabricks.net
+token = $TOKEN
+EOF
         
-        # Verify connection first
+        # Verify connection
         databricks current-user me
 
     - name: Pre-deployment validation
