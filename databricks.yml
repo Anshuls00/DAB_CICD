@@ -3,20 +3,19 @@ bundle:
 
 sync:
   include:
-    - "*.ipynb"        # include all notebooks at repo root
-    # - notebooks/*.ipynb  # (optional) in case you later organize under /notebooks
+    - "*.ipynb"     # repo root ke sabhi notebooks
   exclude:
     - .gitignore
     - README.md
-    - .github/**       # exclude GitHub workflows
+    - .github/**    # workflows ko exclude karega
 
 targets:
   dev:
     mode: development
     workspace:
       host: https://adb-831014617002513.13.azuredatabricks.net
-      file_path: /Shared/DAB_CICD   # target folder inside Databricks workspace
-  
+      file_path: /Shared/DAB_CICD
+
   uat:
     mode: production
     workspace:
