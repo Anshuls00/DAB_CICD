@@ -58,6 +58,7 @@ jobs:
       env:
         DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEV_HOST }}
         DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEV_TOKEN }}
+        DATABRICKS_AUTH_TYPE: "pat"
 
   # Job 3: Deploy to UAT
   deploy-uat:
@@ -96,6 +97,7 @@ jobs:
       env:
         DATABRICKS_HOST: ${{ secrets.DATABRICKS_UAT_HOST }}
         DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_UAT_TOKEN }}
+        DATABRICKS_AUTH_TYPE: "pat"
 
     - name: Deploy to UAT
       run: |
@@ -104,6 +106,7 @@ jobs:
       env:
         DATABRICKS_HOST: ${{ secrets.DATABRICKS_UAT_HOST }}
         DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_UAT_TOKEN }}
+        DATABRICKS_AUTH_TYPE: "pat"
 
     - name: Post-deployment verification
       run: |
@@ -112,6 +115,7 @@ jobs:
       env:
         DATABRICKS_HOST: ${{ secrets.DATABRICKS_UAT_HOST }}
         DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_UAT_TOKEN }}
+        DATABRICKS_AUTH_TYPE: "pat"
 
     - name: Upload UAT deployment artifacts
       uses: actions/upload-artifact@v4
