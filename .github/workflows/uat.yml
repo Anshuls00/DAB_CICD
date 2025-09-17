@@ -1,0 +1,140 @@
+name: Databricks Asset Bundle - CICD
+
+on:
+  workflow_dispatch:  # Manual trigger only
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'uat'
+        type: choice
+        options:
+        - uat
+      confirm:
+        description: 'Type "deploy" to confirm deployment'
+        required: true
+        type: string
+
+env:
+  DATABRICKS_CLI_VERSION: 0.213.0
+
+jobs:
+  # Job 1: Confirm deployment
+  confirm:
+    runs-on: ubuntu-latest
+    name: Confirm Deployment
+    steps:
+    - name: Validate confirmation
+      run: |
+        if [ "${{ github.event.inputs.confirm }}" != "deploy" ]; then
+          echo "❌ Deployment cancelled. Please type 'deploy' to confirm."
+          exit 1
+        fi
+        echo "✅ Deployment confirmed for ${{ github.event.inputs.environment }} environment"
+
+  # Job 2: Validate bundle configuration
+  validate:
+    needs: confirm
+    runs-on: ubuntu-latest
+    name: Validate Bundle
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install Databricks CLI
+      run: |
+        pip install databricks-cli==${{ env.DATABRICKS_CLI_VERSION }}
+
+    - name: Validate bundle configuration
+      run: |
+        databricks bundle validate --target dev
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEV_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEV_TOKEN }}
+
+  # Job 3: Deploy to UAT
+  deploy-uat:
+    needs: validate
+    runs-on: ubuntu-latest
+    name: Deploy to UAT
+    environment: 
+      name: uat
+      url: https://adb-1375573820735468.8.azuredatabricks.net
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install Databricks CLI
+      run: |
+        pip install databricks-cli==${{ env.DATABRICKS_CLI_VERSION }}
+
+    - name: Download dev artifacts (if available)
+      uses: actions/download-artifact@v4
+      with:
+        name: dev-deployment-artifacts
+        path: .
+      continue-on-error: true
+
+    - name: Pre-deployment validation
+      run: |
+        echo "Validating bundle for UAT deployment..."
+        databricks bundle validate --target uat
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_UAT_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_UAT_TOKEN }}
+
+    - name: Deploy to UAT
+      run: |
+        echo "Deploying to UAT environment..."
+        databricks bundle deploy --target uat
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_UAT_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_UAT_TOKEN }}
+
+    - name: Post-deployment verification
+      run: |
+        echo "Verifying deployment..."
+        databricks bundle status --target uat
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_UAT_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_UAT_TOKEN }}
+
+    - name: Upload UAT deployment artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: uat-deployment-artifacts
+        path: |
+          .databricks/
+          databricks.yml
+        retention-days: 30
+
+    - name: Deployment Summary
+      run: |
+        echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+        echo "- **Target Environment**: ${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Databricks Workspace**: https://adb-1375573820735468.8.azuredatabricks.net" >> $GITHUB_STEP_SUMMARY
+        echo "- **Deployment Path**: /Shared/DAB_CICD" >> $GITHUB_STEP_SUMMARY
+        echo "- **Commit SHA**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Triggered by**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+
+  # Job 4: Cleanup (optional - runs on failure)
+  cleanup:
+    needs: [deploy-uat]
+    if: failure()
+    runs-on: ubuntu-latest
+    name: Cleanup on Failure
+    steps:
+    - name: Cleanup artifacts
+      run: |
+        echo "Cleaning up failed deployment artifacts..."
+        # Add any cleanup logic if needed
