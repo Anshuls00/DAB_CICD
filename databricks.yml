@@ -14,8 +14,11 @@ targets:
   dev:
     mode: development
     workspace:
+      host: ${DATABRICKS_DEV_HOST}  # Dev environment host
       file_path: /Shared/DAB_CICD   # target folder inside Databricks workspace
+  
   uat:
     mode: production
     workspace:
+      host: ${DATABRICKS_UAT_HOST}  # UAT environment host 
       file_path: /Shared/DAB_CICD
