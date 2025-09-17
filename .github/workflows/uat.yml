@@ -52,13 +52,13 @@ jobs:
         pip install wheel
         echo "$HOME/.databricks/bin" >> $GITHUB_PATH
 
+    - name: Configure Databricks CLI for Dev
+      run: |
+        databricks configure --host ${{ secrets.DATABRICKS_DEV_HOST }} --token ${{ secrets.DATABRICKS_DEV_TOKEN }}
+
     - name: Validate bundle configuration
       run: |
         databricks bundle validate --target dev
-      env:
-        DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEV_HOST }}
-        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEV_TOKEN }}
-        DATABRICKS_AUTH_TYPE: "pat"
 
   # Job 3: Deploy to UAT
   deploy-uat:
@@ -90,32 +90,24 @@ jobs:
         path: .
       continue-on-error: true
 
+    - name: Configure Databricks CLI for UAT
+      run: |
+        databricks configure --host ${{ secrets.DATABRICKS_UAT_HOST }} --token ${{ secrets.DATABRICKS_UAT_TOKEN }}
+
     - name: Pre-deployment validation
       run: |
         echo "Validating bundle for UAT deployment..."
         databricks bundle validate --target uat
-      env:
-        DATABRICKS_HOST: ${{ secrets.DATABRICKS_UAT_HOST }}
-        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_UAT_TOKEN }}
-        DATABRICKS_AUTH_TYPE: "pat"
 
     - name: Deploy to UAT
       run: |
         echo "Deploying to UAT environment..."
         databricks bundle deploy --target uat
-      env:
-        DATABRICKS_HOST: ${{ secrets.DATABRICKS_UAT_HOST }}
-        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_UAT_TOKEN }}
-        DATABRICKS_AUTH_TYPE: "pat"
 
     - name: Post-deployment verification
       run: |
         echo "Verifying deployment..."
         databricks bundle status --target uat
-      env:
-        DATABRICKS_HOST: ${{ secrets.DATABRICKS_UAT_HOST }}
-        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_UAT_TOKEN }}
-        DATABRICKS_AUTH_TYPE: "pat"
 
     - name: Upload UAT deployment artifacts
       uses: actions/upload-artifact@v4
