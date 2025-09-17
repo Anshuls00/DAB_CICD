@@ -70,7 +70,7 @@ jobs:
         DATABRICKS_DEV_HOST: ${{ secrets.DATABRICKS_DEV_HOST }}
         DATABRICKS_DEV_TOKEN: ${{ secrets.DATABRICKS_DEV_TOKEN }}
 
-    - name: Clean and configure Databricks CLI for Dev
+    - name: Configure Databricks CLI for Dev
       run: |
         # Clean any existing config
         rm -rf ~/.databrickscfg
@@ -82,22 +82,20 @@ jobs:
         echo "Cleaned Host: $HOST"
         echo "Token length after cleaning: ${#TOKEN}"
         
-        # Configure using environment variables (more reliable)
-        export DATABRICKS_HOST="$HOST"
-        export DATABRICKS_TOKEN="$TOKEN"
+        # Create databricks config file directly
+        mkdir -p ~/.databricks
+        cat > ~/.databrickscfg << EOF
+        [DEFAULT]
+        host = https://adb-831014617002513.13.azuredatabricks.net
+        token = $TOKEN
+        EOF
         
         # Verify connection
         databricks current-user me
-      env:
-        DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEV_HOST }}
-        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEV_TOKEN }}
 
     - name: Validate bundle configuration
       run: |
         databricks bundle validate --target dev
-      env:
-        DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEV_HOST }}
-        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEV_TOKEN }}
 
   # Job 3: Deploy to UAT
   deploy-uat:
@@ -135,43 +133,36 @@ jobs:
         rm -rf ~/.databrickscfg
         
         # Remove any trailing whitespace/newlines from secrets
-        HOST=$(echo "${{ secrets.DATABRICKS_UAT_HOST }}" | tr -d '\n\r' | xargs)
         TOKEN=$(echo "${{ secrets.DATABRICKS_UAT_TOKEN }}" | tr -d '\n\r' | xargs)
         
-        echo "UAT Host: $HOST"
+        echo "UAT Host: https://adb-1375573820735468.8.azuredatabricks.net"
         echo "UAT Token length: ${#TOKEN}"
         
+        # Create databricks config file directly
+        mkdir -p ~/.databricks
+        cat > ~/.databrickscfg << EOF
+        [DEFAULT]
+        host = https://adb-1375573820735468.8.azuredatabricks.net
+        token = $TOKEN
+        EOF
+        
         # Verify connection first
-        export DATABRICKS_HOST="$HOST"
-        export DATABRICKS_TOKEN="$TOKEN"
         databricks current-user me
-      env:
-        DATABRICKS_HOST: ${{ secrets.DATABRICKS_UAT_HOST }}
-        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_UAT_TOKEN }}
 
     - name: Pre-deployment validation
       run: |
         echo "Validating bundle for UAT deployment..."
         databricks bundle validate --target uat
-      env:
-        DATABRICKS_HOST: ${{ secrets.DATABRICKS_UAT_HOST }}
-        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_UAT_TOKEN }}
 
     - name: Deploy to UAT
       run: |
         echo "Deploying to UAT environment..."
         databricks bundle deploy --target uat
-      env:
-        DATABRICKS_HOST: ${{ secrets.DATABRICKS_UAT_HOST }}
-        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_UAT_TOKEN }}
 
     - name: Post-deployment verification
       run: |
         echo "Verifying deployment..."
         databricks bundle status --target uat
-      env:
-        DATABRICKS_HOST: ${{ secrets.DATABRICKS_UAT_HOST }}
-        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_UAT_TOKEN }}
 
     - name: Upload UAT deployment artifacts
       uses: actions/upload-artifact@v4
