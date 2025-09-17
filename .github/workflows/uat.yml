@@ -16,7 +16,7 @@ on:
         type: string
 
 env:
-  DATABRICKS_CLI_VERSION: 0.213.0
+  PYTHON_VERSION: '3.10.12'
 
 jobs:
   # Job 1: Confirm deployment
@@ -44,11 +44,13 @@ jobs:
     - name: Setup Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.9'
+        python-version: ${{ env.PYTHON_VERSION }}
 
-    - name: Install Databricks CLI
+    - name: Install Databricks CLI and Bundle
       run: |
-        pip install databricks-cli==${{ env.DATABRICKS_CLI_VERSION }}
+        curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
+        pip install wheel
+        echo "$HOME/.databricks/bin" >> $GITHUB_PATH
 
     - name: Validate bundle configuration
       run: |
@@ -72,11 +74,13 @@ jobs:
     - name: Setup Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.9'
+        python-version: ${{ env.PYTHON_VERSION }}
 
-    - name: Install Databricks CLI
+    - name: Install Databricks CLI and Bundle
       run: |
-        pip install databricks-cli==${{ env.DATABRICKS_CLI_VERSION }}
+        curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
+        pip install wheel
+        echo "$HOME/.databricks/bin" >> $GITHUB_PATH
 
     - name: Download dev artifacts (if available)
       uses: actions/download-artifact@v4
