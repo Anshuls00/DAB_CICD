@@ -1,4 +1,4 @@
-name: Databricks Asset Bundle - CICD
+name: Databricks Asset Bundle - CICD (UAT Only)
 
 on:
   workflow_dispatch:
@@ -7,41 +7,9 @@ env:
   PYTHON_VERSION: '3.10.12'
 
 jobs:
-  validate:
-    runs-on: ubuntu-latest
-    name: Validate Bundle (Dev)
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install Databricks CLI
-        run: |
-          curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
-          echo "$HOME/.databricks/bin" >> $GITHUB_PATH
-
-      - name: Test Authentication (Dev)
-        env:
-          DATABRICKS_HOST: https://adb-831014617002513.13.azuredatabricks.net
-          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEV_TOKEN }}
-        run: |
-          echo "Using environment variables for authentication"
-          databricks workspace list /
-
-      - name: Validate bundle (Dev)
-        env:
-          DATABRICKS_HOST: https://adb-831014617002513.13.azuredatabricks.net
-          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEV_TOKEN }}
-        run: databricks bundle validate --target dev --config-file databricks.yml
-
   deploy-uat:
-    needs: validate
     runs-on: ubuntu-latest
-    name: Deploy to UAT
+    name: Validate and Deploy Bundle to UAT
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -64,6 +32,12 @@ jobs:
           echo "Using environment variables for authentication"
           databricks workspace list /
 
+      - name: Validate bundle (UAT)
+        env:
+          DATABRICKS_HOST: https://adb-1375573820735468.8.azuredatabricks.net
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_UAT_TOKEN }}
+        run: databricks bundle validate --target uat --config-file databricks.yml
+
       - name: Deploy bundle (UAT)
         env:
           DATABRICKS_HOST: https://adb-1375573820735468.8.azuredatabricks.net
@@ -72,5 +46,5 @@ jobs:
 
       - name: Deployment Summary
         run: |
-          echo "🚀 Deployment Complete!" >> $GITHUB_STEP_SUMMARY
+          echo "🚀 Deployment to UAT Complete!" >> $GITHUB_STEP_SUMMARY
           echo "UAT Workspace: https://adb-1375573820735468.8.azuredatabricks.net" >> $GITHUB_STEP_SUMMARY
