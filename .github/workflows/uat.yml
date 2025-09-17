@@ -11,19 +11,23 @@ jobs:
     runs-on: ubuntu-latest
     name: Validate and Deploy Bundle to UAT
     steps:
+      # Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Setup Python
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
+      # Install Databricks CLI
       - name: Install Databricks CLI
         run: |
           curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
           echo "$HOME/.databricks/bin" >> $GITHUB_PATH
 
+      # Test Authentication (UAT)
       - name: Test Authentication (UAT)
         env:
           DATABRICKS_HOST: https://adb-1375573820735468.8.azuredatabricks.net
@@ -32,18 +36,21 @@ jobs:
           echo "Using environment variables for authentication"
           databricks workspace list /
 
+      # Validate the bundle (UAT)
       - name: Validate bundle (UAT)
         env:
           DATABRICKS_HOST: https://adb-1375573820735468.8.azuredatabricks.net
           DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_UAT_TOKEN }}
         run: databricks bundle validate --target uat
 
+      # Deploy the bundle (UAT)
       - name: Deploy bundle (UAT)
         env:
           DATABRICKS_HOST: https://adb-1375573820735468.8.azuredatabricks.net
           DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_UAT_TOKEN }}
-        run: databricks bundle deploy --target uat --config-file databricks.yml
+        run: databricks bundle deploy --target uat
 
+      # Deployment summary
       - name: Deployment Summary
         run: |
           echo "🚀 Deployment to UAT Complete!" >> $GITHUB_STEP_SUMMARY
