@@ -25,10 +25,17 @@ jobs:
         echo "$HOME/.databricks/bin" >> $GITHUB_PATH
 
     - name: Configure Databricks CLI for Dev
+      env:
+        DATABRICKS_HOST: https://adb-831014617002513.13.azuredatabricks.net
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEV_TOKEN }}
       run: |
-        databricks configure --host https://adb-831014617002513.13.azuredatabricks.net --token ${{ secrets.DATABRICKS_DEV_TOKEN }}
+        echo "Using environment variables for authentication"
+        databricks current-user me
 
     - name: Validate bundle
+      env:
+        DATABRICKS_HOST: https://adb-831014617002513.13.azuredatabricks.net
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEV_TOKEN }}
       run: databricks bundle validate --target dev
 
   deploy-uat:
@@ -50,10 +57,17 @@ jobs:
         echo "$HOME/.databricks/bin" >> $GITHUB_PATH
 
     - name: Configure Databricks CLI for UAT
+      env:
+        DATABRICKS_HOST: https://adb-1375573820735468.8.azuredatabricks.net
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_UAT_TOKEN }}
       run: |
-        databricks configure --host https://adb-1375573820735468.8.azuredatabricks.net --token ${{ secrets.DATABRICKS_UAT_TOKEN }}
+        echo "Using environment variables for authentication"
+        databricks current-user me
 
     - name: Deploy to UAT
+      env:
+        DATABRICKS_HOST: https://adb-1375573820735468.8.azuredatabricks.net
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_UAT_TOKEN }}
       run: databricks bundle deploy --target uat
 
     - name: Deployment Summary
