@@ -3,7 +3,7 @@ bundle:
 
 sync:
   include:
-    - "*.ipynb"       # repo root ke sabhi notebooks
+    - "*.ipynb"       
   exclude:
     - .gitignore
     - README.md
@@ -14,10 +14,9 @@ targets:
     mode: development
     workspace:
       host: https://adb-831014617002513.13.azuredatabricks.net
-      file_path: /Shared/DAB_CICD
-
+      file_path: /
   uat:
     mode: production
     workspace:
       host: https://adb-1375573820735468.8.azuredatabricks.net
-      file_path: /Shared/DAB_CICD
+      file_path: /
