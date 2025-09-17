@@ -33,7 +33,7 @@ jobs:
         DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEV_TOKEN }}
       run: |
         echo "Using environment variables for authentication"
-        databricks current-user me
+        databricks workspace ls /
 
     - name: Validate bundle
       env:
@@ -65,7 +65,7 @@ jobs:
         DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_UAT_TOKEN }}
       run: |
         echo "Using environment variables for authentication"
-        databricks current-user me
+        databricks workspace ls /
 
     - name: Deploy to UAT
       env:
