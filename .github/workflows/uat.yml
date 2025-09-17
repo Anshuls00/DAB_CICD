@@ -24,6 +24,9 @@ jobs:
         curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
         echo "$HOME/.databricks/bin" >> $GITHUB_PATH
 
+    - name: Debug check (optional)
+      run: ls -la
+
     - name: Configure Databricks CLI for Dev
       env:
         DATABRICKS_HOST: https://adb-831014617002513.13.azuredatabricks.net
@@ -36,7 +39,7 @@ jobs:
       env:
         DATABRICKS_HOST: https://adb-831014617002513.13.azuredatabricks.net
         DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEV_TOKEN }}
-      run: databricks bundle validate --target dev
+      run: databricks bundle validate --target dev --config-file databricks.yml
 
   deploy-uat:
     needs: validate
@@ -68,7 +71,7 @@ jobs:
       env:
         DATABRICKS_HOST: https://adb-1375573820735468.8.azuredatabricks.net
         DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_UAT_TOKEN }}
-      run: databricks bundle deploy --target uat
+      run: databricks bundle deploy --target uat --config-file databricks.yml
 
     - name: Deployment Summary
       run: |
