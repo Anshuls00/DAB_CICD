@@ -37,6 +37,7 @@ jobs:
     needs: confirm
     runs-on: ubuntu-latest
     name: Validate Bundle
+    environment: development  # Add environment for dev secrets
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -51,6 +52,13 @@ jobs:
         curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
         pip install wheel
         echo "$HOME/.databricks/bin" >> $GITHUB_PATH
+
+    - name: Debug secrets
+      run: |
+        echo "Dev Host: ${{ secrets.DATABRICKS_DEV_HOST }}"
+        echo "Dev Token length: ${#DATABRICKS_DEV_TOKEN}"
+      env:
+        DATABRICKS_DEV_TOKEN: ${{ secrets.DATABRICKS_DEV_TOKEN }}
 
     - name: Configure Databricks CLI for Dev
       run: |
