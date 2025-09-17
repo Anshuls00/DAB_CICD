@@ -3,11 +3,11 @@ bundle:
 
 sync:
   include:
-    - "*.ipynb"     # repo root ke sabhi notebooks
+    - "*.ipynb"       # repo root ke sabhi notebooks
   exclude:
     - .gitignore
     - README.md
-    - .github/**    # workflows ko exclude karega
+    - .github/**
 
 targets:
   dev:
