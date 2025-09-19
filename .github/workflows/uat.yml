@@ -1,63 +1,49 @@
-name: Databricks Asset Bundle - CICD (UAT Only)
+name: Databricks Asset Bundle - CICD
 
 on:
   workflow_dispatch:
 
 env:
-  DATABRICKS_HOST: https://adb-1375573820735468.8.azuredatabricks.net
-
-permissions:
-  id-token: write
-  contents: read
+  DATABRICKS_CONFIG_PROFILE: CICD
 
 jobs:
-  deploy-uat:
-    runs-on: self-hosted
-    name: Validate and Deploy Bundle to UAT
-    
+  deploy:
+    runs-on: windows-latest
+
     steps:
-      # Checkout the repository
+      # Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      # Azure Login using Managed Identity
-      - name: Azure login
-        uses: azure/login@v2
-        with:
-          auth-type: IDENTITY
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          enable-AzPSSession: false
 
       # Install Databricks CLI (new version with bundle support)
       - name: Install Databricks CLI
         shell: powershell
         run: |
-          Write-Host "Installing Databricks CLI (latest release)..."
-          Invoke-WebRequest -Uri https://github.com/databricks/cli/releases/latest/download/databricks_cli_windows_amd64.zip -OutFile databricks_cli.zip
+          $version = "v0.221.0"
+          Write-Host "Installing Databricks CLI $version..."
+          $url = "https://github.com/databricks/cli/releases/download/$version/databricks_cli_windows_amd64.zip"
+          Invoke-WebRequest -Uri $url -OutFile databricks_cli.zip
           Expand-Archive databricks_cli.zip -DestinationPath "$env:USERPROFILE\databricks" -Force
-          $env:PATH = "$env:USERPROFILE\databricks;$env:PATH"
-          Write-Host "Databricks CLI installed at $env:USERPROFILE\databricks"
-          databricks -v
+          echo "$env:USERPROFILE\databricks" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          Write-Host "Databricks CLI installed successfully."
+          databricks version
 
-      # Install uv (using pip)
-      - name: Install uv
-        shell: powershell
-        run: pip install uv
+      # Authenticate to Azure using OIDC (Managed Identity / Federated credentials)
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      # Validate the bundle (UAT)
-      - name: Validate bundle (UAT)
-        shell: powershell
-        run: databricks bundle validate --target uat
-
-      # Deploy the bundle (UAT)
-      - name: Deploy bundle (UAT)
-        shell: powershell
-        run: databricks bundle deploy --target uat
-
-      # Deployment summary
-      - name: Deployment Summary
+      # Validate bundle against UAT target
+      - name: Validate Databricks Bundle
         shell: powershell
         run: |
-          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "🚀 Deployment to UAT Complete!"
-          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "UAT Workspace: $env:DATABRICKS_HOST"
+          databricks bundle validate --target uat
+
+      # Deploy bundle to UAT target
+      - name: Deploy Databricks Bundle
+        shell: powershell
+        run: |
+          databricks bundle deploy --target uat
