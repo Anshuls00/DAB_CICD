@@ -4,7 +4,6 @@ on:
   workflow_dispatch:
 
 env:
-  PYTHON_VERSION: '3.10.11'
   DATABRICKS_HOST: https://adb-1375573820735468.8.azuredatabricks.net
 
 permissions:
@@ -13,25 +12,13 @@ permissions:
 
 jobs:
   deploy-uat:
-    runs-on: self-hosted # Your self-hosted runner label
+    runs-on: self-hosted
     name: Validate and Deploy Bundle to UAT
     
     steps:
       # Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      # Setup Python
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      # Install Databricks CLI using pip (most reliable for Windows)
-      - name: Install Databricks CLI
-        run: |
-          python -m pip install --upgrade pip
-          pip install databricks-cli
 
       # Azure Login using Managed Identity
       - name: Azure login
@@ -42,10 +29,16 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           enable-AzPSSession: false
 
-      # Configure Databricks CLI to use Azure CLI auth
-      - name: Configure Databricks CLI
+      # Verify Databricks CLI is available
+      - name: Check Databricks CLI
+        run: databricks --version
+
+      # Configure authentication (if not pre-configured)
+      - name: Configure Databricks Authentication
         run: |
-          databricks configure --host ${{ env.DATABRICKS_HOST }} --auth-type azure-cli
+          databricks configure --host ${{ env.DATABRICKS_HOST }}
+        env:
+          DATABRICKS_AUTH_TYPE: azure-cli
 
       # Test Authentication
       - name: Test Authentication (UAT)
