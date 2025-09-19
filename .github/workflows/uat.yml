@@ -29,19 +29,21 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           enable-AzPSSession: false
 
-      # Install Databricks CLI (PowerShell only, no bash)
+      # Install Databricks CLI (new version with bundle support)
       - name: Install Databricks CLI
         shell: powershell
         run: |
-          Write-Host "Installing Databricks CLI..."
-          pip install databricks-cli wheel
+          Write-Host "Installing Databricks CLI (latest release)..."
+          Invoke-WebRequest -Uri https://github.com/databricks/cli/releases/latest/download/databricks_cli_windows_amd64.zip -OutFile databricks_cli.zip
+          Expand-Archive databricks_cli.zip -DestinationPath "$env:USERPROFILE\databricks" -Force
+          $env:PATH = "$env:USERPROFILE\databricks;$env:PATH"
+          Write-Host "Databricks CLI installed at $env:USERPROFILE\databricks"
+          databricks -v
 
-      # Install uv (PowerShell only, no bash)
+      # Install uv (using pip)
       - name: Install uv
         shell: powershell
-        run: |
-          Write-Host "Installing uv..."
-          pip install uv
+        run: pip install uv
 
       # Validate the bundle (UAT)
       - name: Validate bundle (UAT)
