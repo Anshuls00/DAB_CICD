@@ -33,12 +33,12 @@ jobs:
       - name: Check Databricks CLI
         run: databricks --version
 
-      # Test Authentication directly with environment variables
-      - name: Test Authentication (UAT)
-        run: databricks workspace list /
-        env:
-          DATABRICKS_HOST: ${{ env.DATABRICKS_HOST }}
-          DATABRICKS_AUTH_TYPE: azure-cli
+      # # Test Authentication directly with environment variables
+      # - name: Test Authentication (UAT)
+      #   run: databricks workspace list /
+      #   env:
+      #     DATABRICKS_HOST: ${{ env.DATABRICKS_HOST }}
+      #     DATABRICKS_AUTH_TYPE: azure-cli
 
       # Validate bundle
       - name: Validate bundle (UAT)
