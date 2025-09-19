@@ -9,7 +9,7 @@ env:
 
 jobs:
   deploy-uat:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     name: Validate and Deploy Bundle to UAT
     steps:
       # Checkout the repository
