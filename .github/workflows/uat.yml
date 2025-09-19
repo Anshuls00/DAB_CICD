@@ -29,35 +29,33 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           enable-AzPSSession: false
 
-      # Install Databricks CLI and Bundle (PowerShell)
-      - name: Install Databricks CLI and Bundle
-        shell: pwsh
+      # Install Databricks CLI (PowerShell only, no bash)
+      - name: Install Databricks CLI
+        shell: powershell
         run: |
-          Invoke-WebRequest -Uri https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh -OutFile install-databricks-cli.sh
-          bash install-databricks-cli.sh
-          pip install wheel
+          Write-Host "Installing Databricks CLI..."
+          pip install databricks-cli wheel
 
-      # Install uv (PowerShell)
+      # Install uv (PowerShell only, no bash)
       - name: Install uv
-        shell: pwsh
+        shell: powershell
         run: |
-          Invoke-WebRequest -Uri https://astral.sh/uv/install.sh -OutFile install-uv.sh
-          bash install-uv.sh
-          $env:PATH = "$HOME\.cargo\bin;$env:PATH"
+          Write-Host "Installing uv..."
+          pip install uv
 
       # Validate the bundle (UAT)
       - name: Validate bundle (UAT)
-        shell: pwsh
+        shell: powershell
         run: databricks bundle validate --target uat
 
       # Deploy the bundle (UAT)
       - name: Deploy bundle (UAT)
-        shell: pwsh
+        shell: powershell
         run: databricks bundle deploy --target uat
 
       # Deployment summary
       - name: Deployment Summary
-        shell: pwsh
+        shell: powershell
         run: |
-          echo "🚀 Deployment to UAT Complete!" >> $env:GITHUB_STEP_SUMMARY
-          echo "UAT Workspace: $env:DATABRICKS_HOST" >> $env:GITHUB_STEP_SUMMARY
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "🚀 Deployment to UAT Complete!"
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "UAT Workspace: $env:DATABRICKS_HOST"
