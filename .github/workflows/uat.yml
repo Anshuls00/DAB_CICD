@@ -1,49 +1,29 @@
-name: Databricks Asset Bundle - CICD
+
+name: Databricks Asset Bundle - CICD (UAT Only)
 
 on:
   workflow_dispatch:
 
 env:
-  DATABRICKS_CONFIG_PROFILE: CICD
+  PYTHON_VERSION: '3.10.12'
 
 jobs:
-  deploy:
-    runs-on: windows-latest
-
+  deploy-uat:
+    runs-on: ubuntu-latest
+    name: Validate and Deploy Bundle to UAT
     steps:
-      # Checkout repo
+      # Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Install Databricks CLI (new version with bundle support)
-      - name: Install Databricks CLI
-        shell: powershell
-        run: |
-          $version = "v0.221.0"
-          Write-Host "Installing Databricks CLI $version..."
-          $url = "https://github.com/databricks/cli/releases/download/$version/databricks_cli_windows_amd64.zip"
-          Invoke-WebRequest -Uri $url -OutFile databricks_cli.zip
-          Expand-Archive databricks_cli.zip -DestinationPath "$env:USERPROFILE\databricks" -Force
-          echo "$env:USERPROFILE\databricks" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          Write-Host "Databricks CLI installed successfully."
-          databricks version
-
-      # Authenticate to Azure using OIDC (Managed Identity / Federated credentials)
-      - name: Azure Login
-        uses: azure/login@v2
+      # Setup Python
+      - name: Setup Python
+        uses: actions/setup-python@v4
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          python-version: ${{ env.PYTHON_VERSION }}
 
-      # Validate bundle against UAT target
-      - name: Validate Databricks Bundle
-        shell: powershell
+      # Install Databricks CLI
+      - name: Install Databricks CLI
         run: |
-          databricks bundle validate --target uat
-
-      # Deploy bundle to UAT target
-      - name: Deploy Databricks Bundle
-        shell: powershell
-        run: |
-          databricks bundle deploy --target uat
+          curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
+          echo "$HOME/.databricks/bin" >> $GITHUB_PATH
