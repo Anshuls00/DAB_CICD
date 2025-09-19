@@ -29,34 +29,35 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           enable-AzPSSession: false
 
-      # Verify Databricks CLI is available
-      - name: Check Databricks CLI
-        run: databricks --version
+      # Install Databricks CLI and Bundle (PowerShell)
+      - name: Install Databricks CLI and Bundle
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh -OutFile install-databricks-cli.sh
+          bash install-databricks-cli.sh
+          pip install wheel
 
-      # # Test Authentication directly with environment variables
-      # - name: Test Authentication (UAT)
-      #   run: databricks workspace list /
-      #   env:
-      #     DATABRICKS_HOST: ${{ env.DATABRICKS_HOST }}
-      #     DATABRICKS_AUTH_TYPE: azure-cli
+      # Install uv (PowerShell)
+      - name: Install uv
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri https://astral.sh/uv/install.sh -OutFile install-uv.sh
+          bash install-uv.sh
+          $env:PATH = "$HOME\.cargo\bin;$env:PATH"
 
-      # Validate bundle
+      # Validate the bundle (UAT)
       - name: Validate bundle (UAT)
+        shell: pwsh
         run: databricks bundle validate --target uat
-        env:
-          DATABRICKS_HOST: ${{ env.DATABRICKS_HOST }}
-          DATABRICKS_AUTH_TYPE: azure-cli
 
-      # Deploy bundle
+      # Deploy the bundle (UAT)
       - name: Deploy bundle (UAT)
+        shell: pwsh
         run: databricks bundle deploy --target uat
-        env:
-          DATABRICKS_HOST: ${{ env.DATABRICKS_HOST }}
-          DATABRICKS_AUTH_TYPE: azure-cli
 
       # Deployment summary
       - name: Deployment Summary
-        shell: powershell
+        shell: pwsh
         run: |
           echo "🚀 Deployment to UAT Complete!" >> $env:GITHUB_STEP_SUMMARY
-          echo "UAT Workspace: ${{ env.DATABRICKS_HOST }}" >> $env:GITHUB_STEP_SUMMARY
+          echo "UAT Workspace: $env:DATABRICKS_HOST" >> $env:GITHUB_STEP_SUMMARY
