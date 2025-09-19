@@ -4,11 +4,16 @@ on:
   workflow_dispatch:
 
 env:
-  PYTHON_VERSION: '3.10.12'
+  PYTHON_VERSION: '3.10.11'
+  DATABRICKS_HOST: https://adb-1375573820735468.8.azuredatabricks.net
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   deploy-uat:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted   # Your self-hosted runner label
     name: Validate and Deploy Bundle to UAT
     steps:
       # Checkout the repository
@@ -27,31 +32,34 @@ jobs:
           curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
           echo "$HOME/.databricks/bin" >> $GITHUB_PATH
 
-      # Test Authentication (UAT)
-      - name: Test Authentication (UAT)
-        env:
-          DATABRICKS_HOST: https://adb-1375573820735468.8.azuredatabricks.net
-          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_UAT_TOKEN }}
-        run: |
-          echo "Using environment variables for authentication"
-          databricks workspace list /
+      # Azure Login using Managed Identity
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          auth-type: IDENTITY
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          enable-AzPSSession: true
 
-      # Validate the bundle (UAT)
+      # Configure Databricks CLI to use Azure CLI auth
+      - name: Configure Databricks CLI
+        run: |
+          databricks configure --host $DATABRICKS_HOST --auth-type azure-cli
+
+      # Test Authentication
+      - name: Test Authentication (UAT)
+        run: databricks workspace list /
+
+      # Validate bundle
       - name: Validate bundle (UAT)
-        env:
-          DATABRICKS_HOST: https://adb-1375573820735468.8.azuredatabricks.net
-          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_UAT_TOKEN }}
         run: databricks bundle validate --target uat
 
-      # Deploy the bundle (UAT)
+      # Deploy bundle
       - name: Deploy bundle (UAT)
-        env:
-          DATABRICKS_HOST: https://adb-1375573820735468.8.azuredatabricks.net
-          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_UAT_TOKEN }}
         run: databricks bundle deploy --target uat
 
       # Deployment summary
       - name: Deployment Summary
         run: |
           echo "🚀 Deployment to UAT Complete!" >> $GITHUB_STEP_SUMMARY
-          echo "UAT Workspace: https://adb-1375573820735468.8.azuredatabricks.net" >> $GITHUB_STEP_SUMMARY
+          echo "UAT Workspace: $DATABRICKS_HOST" >> $GITHUB_STEP_SUMMARY
