@@ -27,9 +27,11 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      # Install Databricks CLI - Using Official Action
+      # Install Databricks CLI using pip (most reliable for Windows)
       - name: Install Databricks CLI
-        uses: databricks/setup-cli@main
+        run: |
+          python -m pip install --upgrade pip
+          pip install databricks-cli
 
       # Azure Login using Managed Identity
       - name: Azure login
@@ -43,7 +45,7 @@ jobs:
       # Configure Databricks CLI to use Azure CLI auth
       - name: Configure Databricks CLI
         run: |
-          databricks configure --host $env:DATABRICKS_HOST --auth-type azure-cli
+          databricks configure --host ${{ env.DATABRICKS_HOST }} --auth-type azure-cli
 
       # Test Authentication
       - name: Test Authentication (UAT)
@@ -59,6 +61,7 @@ jobs:
 
       # Deployment summary
       - name: Deployment Summary
+        shell: powershell
         run: |
           echo "🚀 Deployment to UAT Complete!" >> $env:GITHUB_STEP_SUMMARY
-          echo "UAT Workspace: $env:DATABRICKS_HOST" >> $env:GITHUB_STEP_SUMMARY
+          echo "UAT Workspace: ${{ env.DATABRICKS_HOST }}" >> $env:GITHUB_STEP_SUMMARY
