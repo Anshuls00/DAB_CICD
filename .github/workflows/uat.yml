@@ -13,8 +13,9 @@ permissions:
 
 jobs:
   deploy-uat:
-    runs-on: self-hosted   # Your self-hosted runner label
+    runs-on: self-hosted # Your self-hosted runner label
     name: Validate and Deploy Bundle to UAT
+    
     steps:
       # Checkout the repository
       - name: Checkout repository
@@ -26,11 +27,9 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      # Install Databricks CLI
+      # Install Databricks CLI - Using Official Action
       - name: Install Databricks CLI
-        run: |
-          curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
-          echo "$HOME/.databricks/bin" >> $GITHUB_PATH
+        uses: databricks/setup-cli@main
 
       # Azure Login using Managed Identity
       - name: Azure login
@@ -44,7 +43,7 @@ jobs:
       # Configure Databricks CLI to use Azure CLI auth
       - name: Configure Databricks CLI
         run: |
-          databricks configure --host $DATABRICKS_HOST --auth-type azure-cli
+          databricks configure --host $env:DATABRICKS_HOST --auth-type azure-cli
 
       # Test Authentication
       - name: Test Authentication (UAT)
@@ -61,5 +60,5 @@ jobs:
       # Deployment summary
       - name: Deployment Summary
         run: |
-          echo "🚀 Deployment to UAT Complete!" >> $GITHUB_STEP_SUMMARY
-          echo "UAT Workspace: $DATABRICKS_HOST" >> $GITHUB_STEP_SUMMARY
+          echo "🚀 Deployment to UAT Complete!" >> $env:GITHUB_STEP_SUMMARY
+          echo "UAT Workspace: $env:DATABRICKS_HOST" >> $env:GITHUB_STEP_SUMMARY
