@@ -28,6 +28,7 @@ jobs:
       # Install Databricks CLI
       - name: Install Databricks CLI
         run: |
+          sudo rm -f /usr/local/bin/databricks
           curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sudo sh
           echo "$HOME/.databricks/bin" >> $GITHUB_PATH
 
@@ -37,7 +38,7 @@ jobs:
           DATABRICKS_HOST: https://adb-1375573820735468.8.azuredatabricks.net
           ARM_USE_MSI: true
           ARM_CLIENT_ID: c52d9df3-5587-478e-8da4-692c1964d0f4
-          DATABRICKS_AZURE_RESOURCE_ID: /subscriptions/7133afd3-c71c-4f13-9320-ab6f3543c8c2/resourceGroups/AnshulSinha-rg/providers/Microsoft.Databricks/workspaces/<your-workspace-name>
+          DATABRICKS_AZURE_RESOURCE_ID: /subscriptions/7133afd3-c71c-4f13-9320-ab6f3543c8c2/resourceGroups/AnshulSinha-rg/providers/Microsoft.Databricks/workspaces/testadb
         run: |
           echo "Using Managed Identity for authentication"
           databricks workspace list /
