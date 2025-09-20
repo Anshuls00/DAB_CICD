@@ -8,39 +8,60 @@ env:
 
 jobs:
   deploy-uat:
-    runs-on: self-hosted   # <-- Ab yaha self-hosted runner
+    runs-on: self-hosted   # changed to self-hosted runner
     name: Validate and Deploy Bundle to UAT
     steps:
+      # Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Setup Python
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
+      # Install unzip (required for Databricks CLI install)
+      - name: Install unzip
+        run: sudo apt-get update && sudo apt-get install -y unzip
+
+      # Install Databricks CLI
       - name: Install Databricks CLI
         run: |
           curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sudo sh
           echo "$HOME/.databricks/bin" >> $GITHUB_PATH
 
-      - name: Test Authentication (UAT with MI)
+      # Test Authentication (UAT)
+      - name: Test Authentication (UAT)
         env:
           DATABRICKS_HOST: https://adb-1375573820735468.8.azuredatabricks.net
           ARM_USE_MSI: true
-          ARM_CLIENT_ID: ${{ secrets.DATABRICKS_MI_CLIENT_ID }}
-        run: databricks workspace list /
+          ARM_CLIENT_ID: c52d9df3-5587-478e-8da4-692c1964d0f4
+          DATABRICKS_AZURE_RESOURCE_ID: /subscriptions/7133afd3-c71c-4f13-9320-ab6f3543c8c2/resourceGroups/AnshulSinha-rg/providers/Microsoft.Databricks/workspaces/<your-workspace-name>
+        run: |
+          echo "Using Managed Identity for authentication"
+          databricks workspace list /
 
+      # Validate the bundle (UAT)
       - name: Validate bundle (UAT)
         env:
           DATABRICKS_HOST: https://adb-1375573820735468.8.azuredatabricks.net
           ARM_USE_MSI: true
-          ARM_CLIENT_ID: ${{ secrets.DATABRICKS_MI_CLIENT_ID }}
+          ARM_CLIENT_ID: c52d9df3-5587-478e-8da4-692c1964d0f4
+          DATABRICKS_AZURE_RESOURCE_ID: /subscriptions/7133afd3-c71c-4f13-9320-ab6f3543c8c2/resourceGroups/AnshulSinha-rg/providers/Microsoft.Databricks/workspaces/testadb
         run: databricks bundle validate --target uat
 
+      # Deploy the bundle (UAT)
       - name: Deploy bundle (UAT)
         env:
           DATABRICKS_HOST: https://adb-1375573820735468.8.azuredatabricks.net
           ARM_USE_MSI: true
-          ARM_CLIENT_ID: ${{ secrets.DATABRICKS_MI_CLIENT_ID }}
+          ARM_CLIENT_ID: c52d9df3-5587-478e-8da4-692c1964d0f4
+          DATABRICKS_AZURE_RESOURCE_ID: /subscriptions/7133afd3-c71c-4f13-9320-ab6f3543c8c2/resourceGroups/AnshulSinha-rg/providers/Microsoft.Databricks/workspaces/testadb
         run: databricks bundle deploy --target uat
+
+      # Deployment summary
+      - name: Deployment Summary
+        run: |
+          echo "🚀 Deployment to UAT Complete!" >> $GITHUB_STEP_SUMMARY
+          echo "UAT Workspace: https://adb-1375573820735468.8.azuredatabricks.net" >> $GITHUB_STEP_SUMMARY
