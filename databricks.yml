@@ -2,7 +2,7 @@ bundle:
   name: dab-cicd-bundle
 
 resources:
-  files:
+  notebooks:
     hello_world_notebook:
       source: ./Untitled Notebook 2025-09-16 16_42_09.ipynb
       path: /hello_world_notebook
@@ -24,5 +24,4 @@ targets:
     mode: production
     workspace:
       host: https://adb-1375573820735468.8.azuredatabricks.net
-      # Recommended: set a root_path to avoid duplicate deployments
       root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
